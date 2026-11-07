@@ -58,29 +58,29 @@ Masalah terbesar pedagang kuliner dan UMKM di Indonesia bukan kekurangan pembeli
 ### 1. Arsitektur Sistem Keseluruhan
 
 ```mermaid
-graph TD
-    subgraph Client ["Client Layer (PWA & Android APK)"]
-        BuyerUI["Pembeli (Katalog Online Web)"]
-        MerchantUI["Pedagang (POS Kasir, Menu, Pengaturan, Laporan)"]
-        SW["Service Worker (sw.js) - Push & Cache"]
-        AudioEngine["Web Audio API (Synthesized Cash Chime)"]
+flowchart TD
+    subgraph Client["Client Layer (PWA & Android APK)"]
+        BuyerUI["Pembeli: Katalog Online Web"]
+        MerchantUI["Pedagang: POS Kasir, Menu, Laporan"]
+        SW["Service Worker: Push Notifikasi"]
+        AudioEngine["Web Audio API: Lonceng Kasir"]
     end
 
-    subgraph Edge ["Edge & Reverse Proxy (VPS)"]
-        Nginx["Nginx Reverse Proxy & SSL (Let's Encrypt)"]
-        NginxStatic["Static Assets (Vite Dist, Cache-Control)"]
+    subgraph Edge["Edge & Reverse Proxy (VPS)"]
+        Nginx["Nginx Reverse Proxy & SSL"]
+        NginxStatic["Static Assets Cache-Control"]
     end
 
-    subgraph Backend ["Backend & Realtime Server (Node.js/Express)"]
-        API["REST API (/api/stores, /orders, /products)"]
-        SSEHub["SSE Hub (Server-Sent Events: /events/:storeId)"]
-        AntiBot["Anti-Bot Shield (Honeypot, Rate Limiter)"]
-        DB[(Local File DB / SQLite Persistence)]
+    subgraph Backend["Backend & Realtime Server"]
+        API["REST API Stores, Orders, Products"]
+        SSEHub["SSE Hub Server-Sent Events"]
+        AntiBot["Anti-Bot Shield & Rate Limiter"]
+        DB[("Database Persistence")]
     end
 
-    subgraph External ["External Services"]
-        WA["WhatsApp Web / App API"]
-        OS_FCM["OneSignal / Firebase Cloud Messaging (Opsional)"]
+    subgraph External["External Services"]
+        WA["WhatsApp Web & App API"]
+        OS_FCM["OneSignal / Firebase Cloud Messaging"]
     end
 
     BuyerUI -->|HTTPS / WSS| Nginx
@@ -105,31 +105,31 @@ graph TD
 
 ```mermaid
 flowchart TD
-    Start(["Pembeli Akses lapakinku.my.id/:slug"]) --> CheckOpen{"Cek Status Toko"}
-    CheckOpen -- "Toko Tutup" --> ClosedNotice["Katalog Terkunci (Banner & Tombol Belanja Nonaktif)"]
-    CheckOpen -- "Toko Buka" --> ViewMenu["Pilih Menu & Masukkan Jumlah"]
+    Start["Pembeli Akses Katalog Toko"] --> CheckOpen{"Cek Status Toko"}
+    CheckOpen -->|Toko Tutup| ClosedNotice["Katalog Terkunci (Banner Tutup)"]
+    CheckOpen -->|Toko Buka| ViewMenu["Pilih Menu & Jumlah"]
     
     ViewMenu --> AddCart["Tambah ke Keranjang Belanja"]
-    AddCart --> ChooseType{"Pilih Tipe Pesanan"}
+    AddCart --> ChooseType{"Pilih Tipe Layanan"}
     
-    ChooseType -- "Ambil Sendiri" --> FormTakeaway["Isi Nama & No WhatsApp"]
-    ChooseType -- "Pesan Antar" --> DetectGPS["Deteksi GPS Realtime Pembeli"]
+    ChooseType -->|Ambil Sendiri| FormTakeaway["Isi Nama & WhatsApp"]
+    ChooseType -->|Pesan Antar| DetectGPS["Deteksi GPS Realtime Pembeli"]
     
-    DetectGPS --> CalcDistance["Engine Hitung Jarak (Haversine Formula)"]
-    CalcDistance --> CalcShipping["Hitung Ongkir Otomatis (Tarif/km & Promo Gratis Ongkir)"]
-    CalcShipping --> InputAddress["Masukkan Alamat Lengkap & Patokan Kurir"]
+    DetectGPS --> CalcDistance["Engine Hitung Jarak (Haversine)"]
+    CalcDistance --> CalcShipping["Hitung Ongkir Otomatis"]
+    CalcShipping --> InputAddress["Masukkan Alamat Lengkap & Patokan"]
     
     InputAddress --> Validation{"Validasi Formulir"}
     FormTakeaway --> Validation
     
-    Validation -- "Formulir Belum Lengkap" --> InternalDialog["Tampilkan AppDialog Internal (Tanpa Alert Browser Kuno)"]
-    Validation -- "Lengkap & Valid" --> ChoosePayment["Pilih Metode Bayar: Tunai/COD / Transfer / QRIS"]
+    Validation -->|Belum Lengkap| InternalDialog["Tampilkan Dialog Peringatan"]
+    Validation -->|Lengkap dan Valid| ChoosePayment["Pilih Metode Pembayaran"]
     
     ChoosePayment --> SubmitOrder["Submit Pesanan"]
-    SubmitOrder --> SaveOrder["Simpan Pesanan ke Server API (SSE Broadcast)"]
-    SubmitOrder --> GenerateWA["Format Pesanan Otomatis ke Teks WhatsApp"]
+    SubmitOrder --> SaveOrder["Simpan Pesanan ke Server API"]
+    SubmitOrder --> GenerateWA["Format Pesanan Otomatis ke WhatsApp"]
     
-    SaveOrder --> SuccessScreen["Halaman Order Success + Konfeti"]
+    SaveOrder --> SuccessScreen["Halaman Order Berhasil + Konfeti"]
     GenerateWA --> OpenWA["Buka WhatsApp Pedagang"]
 ```
 
@@ -139,22 +139,22 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-    subgraph Input ["Data Transaksi Masuk"]
+    subgraph Input["Data Transaksi Masuk"]
         T["Total Bayar (Omzet)"]
         Items["Item Menu & Porsi"]
         Cost["Modal HPP per Menu"]
     end
 
-    subgraph Calculation ["Engine Bagi Uang Laci"]
-        CalcModal["Modal Belanja Besok = SUM(HPP × Qty)"]
+    subgraph Calculation["Engine Bagi Uang Laci"]
+        CalcModal["Modal Belanja Besok = SUM(HPP x Qty)"]
         CalcUntung["Untung Bersih = Total Bayar - Total Modal"]
-        Eval{"Untung >= 0 ?"}
+        Eval{"Untung Positif?"}
         UntungBadge["Badge Hijau: Untung Bersih (Aman Disimpan)"]
         RugiBadge["Badge Merah: Rugi (Jual di Bawah Modal)"]
     end
 
-    subgraph Output ["Laporan & Fisik"]
-        ScreenReport["Tampilan Laporan Interaktif (Kartu Hitam & Laci)"]
+    subgraph Output["Laporan & Fisik"]
+        ScreenReport["Tampilan Laporan Interaktif"]
         ExportExcel["Ekspor Multi-sheet Excel (.xlsx)"]
         ExportCSV["Ekspor File CSV (UTF-8 BOM)"]
         WhatsAppShare["Bagikan Ringkasan Laci ke WhatsApp"]
@@ -163,8 +163,8 @@ flowchart LR
     Input --> Calculation
     CalcModal --> CalcUntung
     CalcUntung --> Eval
-    Eval -- Ya --> UntungBadge
-    Eval -- Tidak --> RugiBadge
+    Eval -->|Untung| UntungBadge
+    Eval -->|Rugi| RugiBadge
     
     UntungBadge --> Output
     RugiBadge --> Output
@@ -184,18 +184,18 @@ sequenceDiagram
     participant SW as Service Worker (sw.js)
     participant Audio as Web Audio API Chime
 
-    Pembeli->>App: Tekan "Pesan Lewat WhatsApp"
+    Pembeli->>App: Tekan Pesan Lewat WhatsApp
     App->>Server: POST /api/stores/:id/orders
     Server->>Server: Simpan ke Database
-    Server-->>Pedagang: Broadcast SSE: event 'order:created'
+    Server-->>Pedagang: Broadcast SSE: event order:created
     
     alt Pedagang Buka Tab Aktif
         Pedagang->>Audio: Mainkan 4-Nada Lonceng Kasir (C5-E5-G5-C6)
         Pedagang->>Pedagang: Tampilkan Toast Notifikasi Pesanan Baru
     else Layar HP di Aplikasi Lain / Background
         Server-->>SW: Pemicu Web Push Notification
-        SW->>SW: Tampilkan System Notification + Vibrate Device
-        SW->>Pedagang: Munculkan Notifikasi Layar: "🔔 Pesanan Baru Masuk! #ORD..."
+        SW->>SW: Tampilkan System Notification & Vibrate
+        SW->>Pedagang: Munculkan Notifikasi Layar Pesanan Baru
     end
 
     Pedagang->>Pedagang: Ketuk Notifikasi -> Buka Rincian Pesanan
